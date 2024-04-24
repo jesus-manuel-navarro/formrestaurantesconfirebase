@@ -6,15 +6,20 @@
 //
 
 import SwiftUI
+import FirebaseFirestore
+import Combine
 
 class RestaurantViewModel: ObservableObject {
     
     @Published var restaurants: [Restaurant] = []
+    @Published var restaurantsDB: [Restaurant] = []
+    
     @Published var selectedRestaurant: Restaurant?
     @Published var showSettings: Bool = false
 
     @ObservedObject var almacen: SettingStore
-    
+    // aqui va el nombre de la coleccion del proyecto que vamos a crear
+    var databaseReference = Firestore.firestore().collection("restaurante")  // esto se usa para conectarse
     //Función para agregar datos a la base de datos
     
     //Función para leer datos
@@ -26,6 +31,8 @@ class RestaurantViewModel: ObservableObject {
     init(almacen: SettingStore) {
         
         self.almacen = almacen
+        
+        checkIfDatabaseIsEmpty()
         
         // Initializamos los restaurantes
         self.restaurants = [
@@ -52,22 +59,124 @@ class RestaurantViewModel: ObservableObject {
             Restaurant(name: "CASK Pub and Kitchen", type: "Thai", phone: "432-344050", image: "caskpubkitchen", priceLevel: 1)
             ]
     }
-
+    func checkIfDatabaseIsEmpty(){
+        
+        // contempla que no se pueda conectar
+        // contempla si no hay nada
+        
+        databaseReference.getDocuments{ queySnapshot, error in
+        
+            if let error = error {
+                print("error getting documents: \(error)")
+                return
+            }
+            guard let documents = queySnapshot?.documents
+            else {
+                print ("no documents found")
+                return // imprime el error y se sale por eso no ponemos nada
+            }
+            if documents.isEmpty {
+                self.addInitialRestaurante()
+            }else{
+                print("la coleccion no esta vacia")
+                
+            }
+        }
+        
+        
+        
+        
+        
+        
+    }
+    
+    func addInitialRestaurante() // sino hay restaurantes los añade
+    {
+        let initialRestaurants =
+        [Restaurant(name: "Cafe Deadend", type: "Coffee & Tea Shop", phone: "232-923423", image: "cafedeadend", priceLevel: 3),
+        Restaurant(name: "Homei", type: "Cafe", phone: "348-233423", image: "homei", priceLevel: 3),
+        Restaurant(name: "Teakha", type: "Tea House", phone: "354-243523", image: "teakha", priceLevel: 3, isFavorite: true, isCheckIn: true),
+        Restaurant(name: "Cafe loisl", type: "Austrian / Casual Drink", phone: "453-333423", image: "cafeloisl", priceLevel: 2, isFavorite: true, isCheckIn: true)
+        ]
+        
+        // este for va recorriendo el array y llama una funcion que le va pasando los valores
+        for restarant in initialRestaurants {
+            
+            self.addRestaurant (restaurant : restarant)
+        }
+        
+    }
+    
+    func fetchRestaurants(){
+    
+        databaseReference.getDocuments{ querySnapshot, error in
+                                      
+        if let error = error {
+            print(error)
+                return
+            }
+            // hazme una consulta de la coleccion de la base de datos y metela en documents
+            guard let documents = querySnapshot?.documents else {
+                return
+            }// pregunta si esta vacio
+            if documents.isEmpty {
+                // si esta vacio no hace nada
+            }else{
+                // si tiene lo recorre y lo mete en el array que hemos creado
+                // nos hoblia hacer un try catch
+                // mete los elementos actualizados
+                self.restaurantsDB = documents.compactMap{ document in
+                    do{
+                        let restaurant = try document.data( as: Restaurant.self)
+                        return restaurant
+                    }catch{
+                        return nil
+                    }
+                }
+            }
+        }
+    }
+    
+    
+    // creamos esta funccion
+    func addRestaurant( restaurant : Restaurant){
+        do {
+            _ = try databaseReference.addDocument(from: restaurant)
+        }catch{
+            print ("error \(error)")
+        }
+    }
+    
     func delete(restaurant: Restaurant) {
-        if let index = self.restaurants.firstIndex(where: { $0.id == restaurant.id }) {
+       /* if let index = self.restaurants.firstIndex(where: { $0.id == restaurant.id }) {
             self.restaurants.remove(at: index)
+        } */
+        if let restaurantID = restaurant.id{
+            databaseReference.document(restaurantID).delete {error in
+                if let error = error {
+                    print ("error corriendo document \(error)")
+                }
+            }
         }
     }
 
     func toggleFavorite(restaurant: Restaurant) {
-        if let index = self.restaurants.firstIndex(where: { $0.id == restaurant.id }) {
+       /* if let index = self.restaurants.firstIndex(where: { $0.id == restaurant.id }) {
             self.restaurants[index].isFavorite.toggle()
+        } */
+        if let restaurantID = restaurant.id {
+            databaseReference.document(restaurantID).updateData(
+                ["isFavorite" : !restaurant.isFavorite])
         }
     }
 
     func toggleCheckIn(restaurant: Restaurant) {
-        if let index = self.restaurants.firstIndex(where: { $0.id == restaurant.id }) {
+      /*  if let index = self.restaurants.firstIndex(where: { $0.id == restaurant.id }) {
             self.restaurants[index].isCheckIn.toggle()
+        } */
+        if let restaurantID = restaurant.id {
+            databaseReference.document(restaurantID).updateData(
+                ["isCheckIn": !restaurant.isCheckIn])
         }
     }
 

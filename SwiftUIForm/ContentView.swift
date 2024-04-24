@@ -19,17 +19,18 @@ struct ContentView: View {
         NavigationView {
             List {
                 //Ahora llamamos a los restaurantes a través del ViewModel
-                ForEach(viewModel.restaurants.sorted(by: viewModel.almacen.displayOrder.predicate())){ restaurant in
+                ForEach(viewModel.restaurantsDB.sorted(by: viewModel.almacen.displayOrder.predicate())){ restaurant in
                 
                 //ForEach(restaurants) { restaurant in
                 
                   if viewModel.shouldShowItem(restaurant: restaurant) {
                     BasicImageRow(restaurant: restaurant)
-                        .contextMenu {
+                        .contextMenu { // para
                             
                             Button(action: {
                                 // mark the selected restaurant as check-in
-                                viewModel.toggleCheckIn(restaurant: restaurant)
+                                viewModel.toggleCheckIn( restaurant: restaurant)
+                                viewModel.fetchRestaurants()
                             }) {
                                 HStack {
                                     Text("Check-in")
@@ -40,6 +41,7 @@ struct ContentView: View {
                             Button(action: {
                                 // delete the selected restaurant
                                 viewModel.delete(restaurant: restaurant)
+                                viewModel.fetchRestaurants()
                             }) {
                                 HStack {
                                     Text("Delete")
@@ -50,6 +52,7 @@ struct ContentView: View {
                             Button(action: {
                                 // mark the selected restaurant as favorite
                                 viewModel.toggleFavorite(restaurant: restaurant)
+                                viewModel.fetchRestaurants()
                                 
                             }) {
                                 HStack {
@@ -82,6 +85,10 @@ struct ContentView: View {
                 SettingView().environmentObject(viewModel.almacen)
             }
         }
+        .onAppear(){ viewModel.fetchRestaurants()
+            
+        }
+        // para los ipad y las pantallas completas
         .navigationViewStyle(StackNavigationViewStyle())
     }
     

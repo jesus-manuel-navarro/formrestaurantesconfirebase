@@ -7,10 +7,14 @@
 
 import Foundation
 import SwiftUI
+import FirebaseFirestoreSwift // se añade para conectar
 
-struct Restaurant: Identifiable {
+struct Restaurant : Codable, Identifiable {  // codable es necesario para farebase
     
-    var id = UUID()
+    // estas variables cambian porque esto se adapta para restaurante
+    
+    @DocumentID var id: String?
+    var id2 = UUID()
     var name: String
     var type: String
     var phone: String

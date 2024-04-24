@@ -6,8 +6,6 @@
 //
 
 import SwiftUI
-
-import SwiftUI
 import FirebaseCore
 
 
@@ -15,14 +13,15 @@ import FirebaseCore
 class AppDelegate: NSObject, UIApplicationDelegate {
   func application(_ application: UIApplication,
                    didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
-    FirebaseApp.configure()
+    //FirebaseApp.configure()
 
     return true
   }
-}
+}	
 @main
 struct SwiftUIFormApp: App {
-    
+    // se usa para acceder a la configuracion del firebase y no se usa mas
+    var dB : Void = FirebaseApp.configure()
 @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     
     var almacenInicial = SettingStore()
